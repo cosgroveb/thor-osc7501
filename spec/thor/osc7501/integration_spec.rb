@@ -16,7 +16,7 @@ RSpec.describe 'Thor OSC7501 integration' do
 
   #: (String) -> String
   def normalize_paths(text)
-    text.gsub(%r{/tmp/[^/\s]+/}, '<tmp>/')
+    text.gsub(%r{#{Regexp.escape(Dir.tmpdir)}/[^/\s]+/}, '<tmp>/')
   end
 
   #: (source: String, argv: Array[String], ?thor_cli: bool, ?stdin: String) -> Array[Hash[Symbol, untyped]]

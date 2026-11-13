@@ -29,7 +29,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
       - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: "3.4"

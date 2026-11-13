@@ -39,9 +39,36 @@ module Gem
   end
 
   class Specification
+    def self.find_all_by_name: (String) -> Array[Specification]
+    def self.attribute_names: () -> Array[Symbol]
     def self.any?: () -> bool
                  | () { (Specification) -> boolish } -> bool
+    def bindir: () -> String
     def name: () -> String
+  end
+
+  class Package
+    def initialize: (String) -> void
+    def verify: () -> bool
+    def spec: () -> Specification
+
+    class TarReader
+      include Enumerable[Entry]
+      def self.new: [T] (IO | StringIO) { (TarReader) -> T } -> T
+      def each: () { (Entry) -> void } -> void
+
+      class Entry
+        def full_name: () -> String
+        def read: () -> String
+        def header: () -> TarHeader
+      end
+    end
+
+    class TarHeader
+      def typeflag: () -> String
+      def mode: () -> Integer
+      def linkname: () -> String
+    end
   end
 end
 
@@ -49,4 +76,10 @@ module Open3
   def self.capture3: (*String, ?stdin_data: String, ?chdir: String) -> [String, String, Process::Status]
                   | (Hash[String, String?], *String, ?stdin_data: String, ?chdir: String) -> [String, String, Process::Status]
                   | ...
+end
+
+module Zlib
+  class GzipReader
+    def self.wrap: [T] (StringIO) { (GzipReader) -> T } -> T
+  end
 end

@@ -4,13 +4,20 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
+    inputs:
+      release-artifact:
+        description: Prepared release bundle from the calling workflow
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ inputs.release-artifact == '' }}
 
 jobs:
   test:
@@ -43,19 +50,64 @@ jobs:
             ruby: "3.4"
     runs-on: ${{ matrix.os }}
     env:
-      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+      BUNDLE_GEMFILE: ${{ matrix.gemfile || 'Gemfile' }}
       THOR_VERSION: ${{ matrix.thor }}
       RSPEC_MINOR: ${{ matrix.rspec_minor }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: inputs.release-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.release-artifact }}
+          path: ${{ runner.temp }}/release
+      - if: inputs.release-artifact != ''
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          ruby-version: "3.4"
+          bundler: none
+          bundler-cache: false
+      - if: inputs.release-artifact != ''
+        run: ruby script/release.rb restore "$RUNNER_TEMP/release"
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler: ${{ matrix.bundler }}
-      - run: bundle install
-      - run: bundle exec rspec
-      - run: bundle exec rake types
-        if: ${{ matrix.gemfile == '' }}
-      - run: bundle exec rake package
-      - run: bundle exec rake smoke
-        if: ${{ matrix.gemfile == '' }}
+          bundler: ${{ matrix.bundler || 'default' }}
+          bundler-cache: true
+          cache-version: ${{ matrix.ruby }}-${{ matrix.gemfile || 'Gemfile' }}-${{ matrix.thor }}-${{ matrix.rspec_minor }}
+      # The spec suite uses post-2.1 syntax. Compatibility runs verify the
+      # Ruby 2.1 floor against the built gem instead.
+      - if: matrix.gemfile != 'Gemfile.compat'
+        run: bundle exec rspec
+      - if: matrix.gemfile != 'Gemfile.compat'
+        run: bundle exec rake types package smoke
+      - if: matrix.gemfile == 'Gemfile.compat'
+        run: |
+          bundle exec gem build thor-osc7501.gemspec
+          bundle exec ruby script/smoke.rb thor-osc7501-*.gem
+
+  pure-thor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: inputs.release-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.release-artifact }}
+          path: ${{ runner.temp }}/release
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          ruby-version: "3.4"
+          bundler: none
+          bundler-cache: false
+      - if: inputs.release-artifact != ''
+        run: ruby script/release.rb restore "$RUNNER_TEMP/release"
+      - run: gem install thor --no-document
+      - name: Check installed gem without development gems
+        run: |
+          gem build thor-osc7501.gemspec --output "$RUNNER_TEMP/thor-osc7501.gem"
+          ruby -rthor script/smoke.rb "$RUNNER_TEMP/thor-osc7501.gem"

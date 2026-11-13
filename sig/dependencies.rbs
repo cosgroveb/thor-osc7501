@@ -1,0 +1,52 @@
+# Dependency APIs used by the adapter that are absent from bundled RBS.
+class Thor
+  module OSC7501
+    interface _Command
+      def name: () -> String
+    end
+
+    # Self type for the generated hook module (rbs-inline cannot emit it):
+    # the prepended module's instances are Thor commands.
+    module CommandHook : _Command
+    end
+  end
+
+  class Command
+    attr_reader name: String
+  end
+
+  class Runner
+    def self.all_commands: () -> Hash[String, Command]
+  end
+
+  def self.all_commands: () -> Hash[String, Command]
+
+  module Base
+    def self.subclasses: () -> Array[Class]
+  end
+
+  class Shell
+    class Basic
+      def ask: (untyped statement, *untyped args) ?{ (*untyped) -> untyped } -> untyped
+    end
+  end
+end
+
+module Gem
+  class BasicSpecification
+    def full_gem_path: () -> String
+    def cache_file: () -> String
+  end
+
+  class Specification
+    def self.any?: () -> bool
+                 | () { (Specification) -> boolish } -> bool
+    def name: () -> String
+  end
+end
+
+module Open3
+  def self.capture3: (*String, ?stdin_data: String, ?chdir: String) -> [String, String, Process::Status]
+                  | (Hash[String, String?], *String, ?stdin_data: String, ?chdir: String) -> [String, String, Process::Status]
+                  | ...
+end

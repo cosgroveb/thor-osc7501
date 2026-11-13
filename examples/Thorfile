@@ -1,0 +1,38 @@
+# frozen_string_literal: true
+# rbs_inline: enabled
+
+# A tiny generic Thor CLI that exercises OSC 7501 reporting: work, nested
+# work, a confirmation prompt, then completion. Run with:
+#   bundle exec thor deploy
+# and compare against THOR_OSC7501=off. A failing command and Ctrl-C show
+# the error and idle outcomes.
+require 'thor/osc7501'
+
+class Deploy < Thor
+  default_task :deploy
+
+  desc 'deploy', 'Work, confirm, then finish'
+  def deploy
+    say 'preparing'
+    sleep 1
+    invoke :health
+    proceed = yes? 'Proceed with release?'
+    raise 'declined' unless proceed
+    say 'releasing'
+    sleep 1
+    say 'done'
+  end
+
+  desc 'health', 'Nested work example'
+  def health
+    say 'checking'
+    sleep 1
+    say 'healthy'
+  end
+
+  desc 'fail', 'Failure variant'
+  def fail
+    say 'preparing'
+    raise 'boom'
+  end
+end

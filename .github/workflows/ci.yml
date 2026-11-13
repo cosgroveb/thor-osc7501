@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            ruby: "2.1"
+            thor: "0.19.4"
+            gemfile: Gemfile.compat
+            bundler: "1.17.3"
+            rspec_minor: "3.6"
+          - os: ubuntu-22.04
+            ruby: "2.1"
+            thor: "1.2.2"
+            gemfile: Gemfile.compat
+            bundler: "1.17.3"
+            rspec_minor: "3.6"
+          - os: ubuntu-latest
+            ruby: "3.4"
+            thor: "0.19.4"
+          - os: ubuntu-latest
+            ruby: "3.4"
+            thor: "1.2.2"
+          - os: ubuntu-latest
+            ruby: "3.4"
+          - os: macos-latest
+            ruby: "3.4"
+    runs-on: ${{ matrix.os }}
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+      THOR_VERSION: ${{ matrix.thor }}
+      RSPEC_MINOR: ${{ matrix.rspec_minor }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ matrix.bundler }}
+      - run: bundle install
+      - run: bundle exec rspec
+      - run: bundle exec rake types
+        if: ${{ matrix.gemfile == '' }}
+      - run: bundle exec rake package
+      - run: bundle exec rake smoke
+        if: ${{ matrix.gemfile == '' }}

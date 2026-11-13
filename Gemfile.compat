@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+# rbs_inline: enabled
+
+source 'https://rubygems.org'
+gemspec
+gem 'thor', ENV.fetch('THOR_VERSION', '>= 0.19.4')
+gem 'rake', '12.3.3'
+rspec_minor = ENV.fetch('RSPEC_MINOR', '3.6')
+gem 'rspec', ENV.fetch('RSPEC_VERSION', "~> #{rspec_minor}.0")
+gem 'rspec-core', ENV.fetch('RSPEC_CORE_VERSION', "~> #{rspec_minor}.0")
+gem 'diff-lcs', '1.3'

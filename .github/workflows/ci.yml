@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       BUNDLE_GEMFILE: ${{ matrix.gemfile || 'Gemfile' }}
-      THOR_VERSION: ${{ matrix.thor }}
+      THOR_VERSION: ${{ matrix.thor || '>= 0.19.4' }}
       RSPEC_MINOR: ${{ matrix.rspec_minor }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -42,7 +42,7 @@ class InstalledSmoke
     # Plain string building, no squiggly heredoc: this smoke also runs on Ruby 2.1.
     source = "require 'thor/osc7501'\n"
     source += "abort 'Wrong installed entrypoint' unless $LOADED_FEATURES.include?(#{@entrypoint.inspect})\n"
-    source += "abort 'Companion loaded' if Gem::Specification.any? { |spec| spec.name.start_with?('rspec', 'rake') }\n"
+    source += "abort 'Companion loaded' if Gem.loaded_specs.keys.any? { |name| name.start_with?('rspec', 'rake') }\n"
     source += "class Smoke < Thor\n"
     source += "  desc 'pass', 'pass'\n"
     source += "  def pass\n"

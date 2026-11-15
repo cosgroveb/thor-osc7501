@@ -49,10 +49,16 @@ values never imply success or failure.
 | `THOR_OSC7501=off` | Disable Thor reporting. |
 | any other value | Raise `ArgumentError`. |
 
+Reporting also sets the terminal title. While one command runs, the title is
+`thor › <command>`. While several commands run in parallel, it is
+`thor › <n> active commands`. The title returns to `thor` after the last
+command, on completion, and on error or stop.
+
 Reporting IO failures disable reporting without replacing the command's own
 exception or result. Messages are sanitized to a single plain-text line and
-capped at 2048 decoded UTF-8 bytes. The ordinary terminal prompt is
-unchanged.
+capped at 2048 decoded UTF-8 bytes. Window titles are sanitized the same way
+and capped at 512 bytes including the `thor › ` prefix. The ordinary terminal
+prompt is unchanged.
 
 ## Boundaries
 

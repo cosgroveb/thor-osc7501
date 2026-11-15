@@ -57,8 +57,22 @@ RSpec.describe Thor::OSC7501::Writer do
     writer(output).emit(state: 'working', msg: 'deploy')
     body = output.string[/\e\]7501;([^\e]*)\e\\/, 1]
     expect(body).to eq("app=thor:title=VGhvcg==:state=working:msg=#{['deploy'].pack('m0')}")
-    expect(output.string).to start_with("\e]7501;").and(end_with("\e\\"))
+    expect(output.string).to start_with("\e]2;thor\e\\\e]7501;").and(end_with("\e\\"))
     expect(output.string).to eq(output.string.delete("\n"))
+  end
+
+  it 'composes a bounded sanitized window title with the prefix' do
+    writer(output).emit(state: 'working', msg: 'deploy',
+                        window_title: "\e\xFF\n".b.force_encoding('UTF-8') + "\a install " * 300)
+    title = output.string[/\A\e\]2;([^\e]*)\e\\/, 1]
+    expect(title.bytesize).to be <= 512
+    expect(title).to be_valid_encoding
+    expect(title).to start_with('thor › ')
+  end
+
+  it 'falls back to the bare prefix without a window title' do
+    writer(output).emit(state: 'done', msg: 'Completed')
+    expect(output.string).to start_with("\e]2;thor\e\\")
   end
 
   it 'omits the kind field when no kind is given' do

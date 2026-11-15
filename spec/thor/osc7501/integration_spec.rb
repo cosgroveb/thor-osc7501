@@ -54,6 +54,11 @@ RSpec.describe 'Thor OSC7501 integration' do
     expect(enabled[:stdout]).to eq("working\n")
   end
 
+  it 'titles the terminal with the running command and returns it to thor' do
+    enabled, = compare(source: cli_source("#{BASE_COMMANDS}\nDeploy.start(ARGV)"), argv: ['work'])
+    expect(enabled[:titles]).to eq(['thor › work', 'thor'])
+  end
+
   it 'activates when required after class definition' do
     source = <<~CODE
       # frozen_string_literal: true

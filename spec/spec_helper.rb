@@ -17,7 +17,12 @@ module FrameHelpers
 
   #: (String) -> String
   def without_frames(output)
-    output.gsub(/\e\]7501;[^\e]*\e\\/, '')
+    output.gsub(/\e\](?:2|7501);[^\e]*\e\\/, '')
+  end
+
+  #: (String) -> Array[String]
+  def titles(output)
+    output.scan(/\e\]2;([^\e]*)\e\\/).map { |(title)| title.force_encoding('UTF-8') }
   end
 end
 

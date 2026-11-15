@@ -114,9 +114,10 @@ class Thor
         active = active_commands
         return if active.empty?
         if active.size == 1
-          @writer.emit(state: 'working', msg: active.first.last)
+          @writer.emit(state: 'working', msg: active.first.last, window_title: active.first.last)
         else
-          @writer.emit(state: 'working', msg: "#{active.size} active commands")
+          @writer.emit(state: 'working', msg: "#{active.size} active commands",
+                                             window_title: "#{active.size} active commands")
         end
       end
 

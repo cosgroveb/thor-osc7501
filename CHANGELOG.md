@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-11-15
+
+- Show the current command in the terminal title \(\#1\) ([8fd4c10](https://github.com/cosgroveb/thor-osc7501/commit/8fd4c108313aaed11531fa82f87a81f1d3b51139))
+
 ## 0.1.0 - 2026-11-13
 
 - init ([8d8fc45](https://github.com/cosgroveb/thor-osc7501/commit/8d8fc45f2577583c4e60d32ed7dcc3a047ddd7e1))

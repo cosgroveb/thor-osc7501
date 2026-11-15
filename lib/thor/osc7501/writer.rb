@@ -6,6 +6,9 @@ class Thor
     # Encodes status records onto an output stream following the family
     # writer contract. Private to the adapter.
     class Writer # :nodoc: all
+      TITLE_BYTE_LIMIT = 512
+      TITLE_PREFIX = 'thor'
+
       # @rbs @output: IO | StringIO
       # @rbs @enabled: bool
 
@@ -19,13 +22,17 @@ class Thor
         @enabled = false
       end
 
-      #: (state: String, msg: String, ?kind: String?) -> nil
-      def emit(state:, msg:, kind: nil)
+      #: (state: String, msg: String, ?kind: String?, ?window_title: String?) -> nil
+      def emit(state:, msg:, kind: nil, window_title: nil)
         return nil unless @enabled
 
+        # Compose only after sanitizing the name so binary input cannot mix encodings.
+        name = window_title && sanitize(window_title, TITLE_BYTE_LIMIT)
+        title = name && !name.empty? && sanitize(TITLE_PREFIX + ' › ' + name, TITLE_BYTE_LIMIT)
+        @output.write("\e]2;#{title || TITLE_PREFIX}\e\\")
         fields = ['app=thor', 'title=VGhvcg==', "state=#{state}"]
         fields << "kind=#{kind}" if kind
-        fields << "msg=#{encode(msg, 2048)}"
+        fields << "msg=#{[sanitize(msg, 2048)].pack('m0')}"
         @output.write("\e]7501;#{fields.join(':')}\e\\")
         @output.flush if @output.respond_to?(:flush)
         nil
@@ -43,18 +50,17 @@ class Thor
       end
 
       #: (String, Integer) -> String
-      def encode(text, byte_limit)
+      def sanitize(text, byte_limit)
         input = text.to_s.byteslice(0, sanitization_byte_limit(byte_limit)) #: String
         plain = input.encode('UTF-8', invalid: :replace, undef: :replace)
         plain = plain.gsub(/\e\[[0-9;?]*[ -\/]*[@-~]/, '')
         plain = plain.gsub(/[\u0000-\u001F\u007F-\u009F]/, ' ')
         clean = plain.gsub(/\s+/, ' ').strip
         bytes = 0
-        bounded = clean.each_char.take_while do |char|
+        clean.each_char.take_while do |char|
           bytes += char.bytesize
           bytes <= byte_limit
         end.join
-        [bounded].pack('m0')
       end
 
       # Bound sanitization work with 50% headroom for removed formatting.

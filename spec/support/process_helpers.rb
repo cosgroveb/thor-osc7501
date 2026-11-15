@@ -16,7 +16,8 @@ class ProcessHelpers
       prepare(directory, source, thor_cli)
       command = thor_command(directory, argv, thor_cli)
       output, error, status = capture({ 'THOR_OSC7501' => mode, 'TERM' => nil }, command, directory, stdin)
-      { frames: frames_from(output), stdout: without_frames(output), stderr: error, status: status }
+      { frames: frames_from(output), titles: titles_from(output), stdout: without_frames(output),
+        stderr: error, status: status }
     end
   end
 
@@ -32,7 +33,8 @@ class ProcessHelpers
       command = thor_command(directory, argv, thor_cli)
       output, status = capture_tty({ 'THOR_OSC7501' => mode, 'TERM' => 'xterm-256color' }, command, directory,
                                    input, wait_state, signal)
-      { frames: frames_from(output), stdout: without_frames(output), pty: output, status: status }
+      { frames: frames_from(output), titles: titles_from(output), stdout: without_frames(output),
+        pty: output, status: status }
     end
   end
 
@@ -137,7 +139,12 @@ class ProcessHelpers
 
   #: (String) -> String
   def self.without_frames(output)
-    output.gsub(/\e\]7501;[^\e]*\e\\/, '')
+    output.gsub(/\e\](?:2|7501);[^\e]*\e\\/, '')
   end
-  private_class_method :without_frames
+
+  #: (String) -> Array[String]
+  def self.titles_from(output)
+    output.scan(/\e\]2;([^\e]*)\e\\/).map { |(title)| title.force_encoding('UTF-8') }
+  end
+  private_class_method :without_frames, :titles_from
 end

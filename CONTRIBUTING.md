@@ -1,5 +1,8 @@
 # Contributing
 
+Follow the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
+the private channel in [SECURITY.md](SECURITY.md).
+
 AI-assisted contributions are welcome. Before requesting review, understand
 the changes, run relevant checks, and verify claims in code, documentation,
 and reports. State what you tested and what remains uncertain. Be prepared

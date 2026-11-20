@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
     'changelog_uri' => 'https://github.com/cosgroveb/thor-osc7501/blob/main/CHANGELOG.md'
   }
   spec.files = Dir['lib/**/*.rb'] + Dir['examples/Thorfile'] +
-               %w[README.md CHANGELOG.md LICENSE CONTRIBUTING.md]
+               %w[README.md CHANGELOG.md LICENSE CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md ACCESSIBILITY.md]
   spec.require_paths = ['lib']
   spec.add_runtime_dependency 'thor', '>= 0.19.4'
 end

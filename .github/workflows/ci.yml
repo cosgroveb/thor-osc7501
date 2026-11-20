@@ -76,6 +76,14 @@ jobs:
           bundler: ${{ matrix.bundler || 'default' }}
           bundler-cache: true
           cache-version: ${{ matrix.ruby }}-${{ matrix.gemfile || 'Gemfile' }}-${{ matrix.thor }}-${{ matrix.rspec_minor }}
+      - name: Install actionlint
+        if: matrix.os == 'ubuntu-latest' && matrix.ruby == '3.4' && !matrix.thor
+        run: |
+          GOBIN="$RUNNER_TEMP/bin" go install github.com/rhysd/actionlint/cmd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Check code quality
+        if: matrix.os == 'ubuntu-latest' && matrix.ruby == '3.4' && !matrix.thor
+        run: bundle exec rake quality
       # The spec suite uses post-2.1 syntax. Compatibility runs verify the
       # Ruby 2.1 floor against the built gem instead.
       - if: matrix.gemfile != 'Gemfile.compat'

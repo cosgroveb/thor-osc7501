@@ -9,7 +9,7 @@ Target MRI Ruby >= 2.1 and Thor >= 0.19.4. Runtime dependencies stay limited to 
 - `script/release.rb` uses modern Ruby only.
 
 Run `bundle install`, then `bundle exec rake` for quality checks, specs and
-RDoc. Compatibility jobs use `Gemfile.compat`.
+installed-gem smoke tests. Compatibility jobs use `Gemfile.compat`.
 
 Preserve Thor's dispatch, exceptions, exit status and caller-owned streams.
 Keep records bounded and sanitize text. Do not add process-wide exit hooks,

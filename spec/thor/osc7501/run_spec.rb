@@ -12,8 +12,8 @@ RSpec.describe Thor::OSC7501::Run do
     described_class.new(output, mode: mode)
   end
 
-  #: (Thor::OSC7501::Run) -> Array[String]
-  def working_messages(run)
+  #: () -> Array[String]
+  def working_messages
     frames(output.string).select { |frame| frame['state'] == 'working' }.map { |frame| frame['msg'] }
   end
 
@@ -29,14 +29,14 @@ RSpec.describe Thor::OSC7501::Run do
       run.during_command('outer') { run.during_command('inner') { :value } }
     end
     expect(value).to eq(:value)
-    expect(working_messages(run)).to eq(['outer', 'inner', 'outer'])
+    expect(working_messages).to eq(['outer', 'inner', 'outer'])
     expect(final_states).to eq(['done'])
   end
 
   it 'emits no working record when the active stack empties' do
     run = make_run
     run.during_run { run.during_command('solo') { :value } }
-    expect(working_messages(run)).to eq(['solo'])
+    expect(working_messages).to eq(['solo'])
     expect(final_states).to eq(['done'])
   end
 
@@ -55,12 +55,12 @@ RSpec.describe Thor::OSC7501::Run do
         end
       end
       2.times { ready.pop }
-      expect(working_messages(run)).to include('2 active commands')
+      expect(working_messages).to include('2 active commands')
       2.times { release << true }
       workers.map(&:value)
     end
     expect(results).to eq(%w[result0 result1])
-    messages = working_messages(run)
+    messages = working_messages
     expect(messages).to include('worker0', 'worker1', '2 active commands')
     expect(%w[worker0 worker1]).to include(messages.last)
     expect(final_states).to eq(['done'])
@@ -114,7 +114,7 @@ RSpec.describe Thor::OSC7501::Run do
       end
     end
     expect(final_states).to eq(['done'])
-    expect(working_messages(run)).to eq(%w[outer inner outer])
+    expect(working_messages).to eq(%w[outer inner outer])
   end
 
   it 'does not overwrite the final record with late cleanup' do
@@ -148,7 +148,6 @@ RSpec.describe Thor::OSC7501::Run do
     run = make_run
     in_prompt = Queue.new
     release = Queue.new
-    answer = nil
     worker = Thread.new do
       run.during_run do
         run.during_command('worker') do
@@ -165,7 +164,7 @@ RSpec.describe Thor::OSC7501::Run do
     release << true
     answer = worker.value
     expect(answer).to eq('answered')
-    expect(working_messages(run).last).to eq('worker')
+    expect(working_messages.last).to eq('worker')
     expect(final_states).to eq(['done'])
   end
 

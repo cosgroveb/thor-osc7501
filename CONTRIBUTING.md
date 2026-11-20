@@ -9,16 +9,21 @@ and reports. State what you tested and what remains uncertain. Be prepared
 to explain your choices and address feedback. When using an agent to help
 answer a reviewer, check the answer and send only what is relevant.
 
-Use MRI Ruby 3.4 or newer for development tooling, then run all checks:
+Use MRI Ruby 3.4 or newer for development tooling. Install actionlint 1.7.12 on
+your PATH, then run all checks:
 
 ```sh
 bundle install
 bundle exec rake
 ```
 
-The default task runs inline RBS checks with Steep, the specs and
-installed-gem smoke tests. Run `bundle exec rake types`, `spec`, `package`
-or `smoke` for individual checks.
+The default task runs RuboCop with rubocop-rspec, bundler-audit, actionlint,
+inline RBS checks with Steep, the specs and installed-gem smoke tests. Run
+`bundle exec rake lint`, `audit`, `workflows`, `types`, `spec`, `package` or
+`smoke` for individual checks. RuboCop applies default style rules to release
+tooling and build configuration, and correctness cops to runtime code, specs
+and smoke tests. Dependency auditing uses the ignored lockfile from
+`bundle install`.
 
 `rake types` validates that every authored file opts into inline RBS, every
 method carries a `#:` annotation, and Steep accepts the runtime and tooling

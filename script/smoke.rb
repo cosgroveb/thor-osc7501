@@ -57,7 +57,7 @@ class InstalledSmoke
     source += "  desc 'prompt', 'prompt'\n"
     source += "  def prompt\n"
     source += "    answer = ask('Proceed?')\n"
-    source += '    puts "answered: #{answer}"' + "\n"
+    source += "    puts \"answered: \#{answer}\"\n"
     source += "  end\n"
     source += "end\n"
     source += 'Smoke.start(ARGV)'

@@ -113,7 +113,7 @@ RSpec.describe Thor::OSC7501::Writer do
 
   describe 'modes' do
     it 'emits in force mode without a TTY' do
-      expect { writer(output, 'force').emit(state: 'working', msg: 'x') }.to change { output.string }
+      expect { writer(output, 'force').emit(state: 'working', msg: 'x') }.to(change { output.string })
     end
 
     it 'stays silent in off mode' do

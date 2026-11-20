@@ -5,11 +5,11 @@ require 'spec_helper'
 require_relative '../../support/process_helpers'
 
 RSpec.describe 'Thor OSC7501 integration' do
-  ACTIVATE = "require 'thor/osc7501'".freeze
+  let(:activate) { "require 'thor/osc7501'" }
 
   #: (String, ?activate_first: bool) -> String
   def cli_source(body, activate_first: true)
-    activation = ACTIVATE
+    activation = activate
     body = "# frozen_string_literal: true\n" + body
     activate_first ? "#{activation}\n#{body}" : "#{body}\n#{activation}\n"
   end
@@ -32,7 +32,7 @@ RSpec.describe 'Thor OSC7501 integration' do
     [enabled, disabled]
   end
 
-  BASE_COMMANDS = <<~CODE.freeze
+  let(:base_commands) { <<~CODE }
     class Deploy < Thor
       desc 'work', 'do work'
       def work
@@ -47,7 +47,7 @@ RSpec.describe 'Thor OSC7501 integration' do
   CODE
 
   it 'reports a direct .start run and preserves ordinary output' do
-    enabled, = compare(source: cli_source("#{BASE_COMMANDS}\nDeploy.start(ARGV)"), argv: ['work'])
+    enabled, = compare(source: cli_source("#{base_commands}\nDeploy.start(ARGV)"), argv: ['work'])
     expect(enabled[:frames].map { |frame| frame['state'] }).to eq(%w[working done])
     expect(enabled[:frames].first).to include('app' => 'thor', 'msg' => 'work')
     expect(enabled[:frames].last).to include('msg' => 'Completed')
@@ -55,7 +55,7 @@ RSpec.describe 'Thor OSC7501 integration' do
   end
 
   it 'titles the terminal with the running command and returns it to thor' do
-    enabled, = compare(source: cli_source("#{BASE_COMMANDS}\nDeploy.start(ARGV)"), argv: ['work'])
+    enabled, = compare(source: cli_source("#{base_commands}\nDeploy.start(ARGV)"), argv: ['work'])
     expect(enabled[:titles]).to eq(['thor › work', 'thor'])
   end
 
@@ -63,8 +63,8 @@ RSpec.describe 'Thor OSC7501 integration' do
     source = <<~CODE
       # frozen_string_literal: true
       require 'thor'
-      #{BASE_COMMANDS}
-      #{ACTIVATE}
+      #{base_commands}
+      #{activate}
       Deploy.start(ARGV)
     CODE
     enabled, = compare(source: source, argv: ['work'])
@@ -72,7 +72,7 @@ RSpec.describe 'Thor OSC7501 integration' do
   end
 
   it 'stays idempotent under duplicate activation' do
-    source = cli_source("#{ACTIVATE}\n#{ACTIVATE}\nThor::OSC7501.install!\n#{BASE_COMMANDS}\nDeploy.start(ARGV)")
+    source = cli_source("#{activate}\n#{activate}\nThor::OSC7501.install!\n#{base_commands}\nDeploy.start(ARGV)")
     enabled, = compare(source: source, argv: ['work'])
     expect(enabled[:frames].count { |frame| frame['state'] == 'working' }).to eq(1)
     expect(enabled[:frames].last['state']).to eq('done')
@@ -137,7 +137,7 @@ RSpec.describe 'Thor OSC7501 integration' do
       end
       Deploy.start(ARGV)
     CODE
-    enabled, disabled = compare(source: source, argv: ['boom'])
+    enabled, = compare(source: source, argv: ['boom'])
     expect(enabled[:frames].last['state']).to eq('error')
     expect(enabled[:status].exitstatus).to eq(1)
   end

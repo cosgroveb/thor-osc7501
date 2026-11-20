@@ -5,15 +5,15 @@ require 'spec_helper'
 require_relative '../../support/process_helpers'
 
 RSpec.describe 'Thor OSC7501 prompts' do
-  ACTIVATE = "require 'thor/osc7501'".freeze
+  let(:activate) { "require 'thor/osc7501'" }
 
   #: (String, Array[String], ?String, ?String) -> Hash[Symbol, untyped]
   def run_prompt(body, argv, stdin = '', mode = 'force')
-    source = "# frozen_string_literal: true\n#{ACTIVATE}\n" + body
+    source = "# frozen_string_literal: true\n#{activate}\n" + body
     ProcessHelpers.run_cli(source: source, argv: argv, mode: mode, stdin: stdin)
   end
 
-  ASK_CLI = <<~'CODE'.freeze
+  let(:ask_cli) { <<~'CODE' }
     class Interview < Thor
       desc 'question', 'ask a question'
       def question
@@ -48,8 +48,8 @@ RSpec.describe 'Thor OSC7501 prompts' do
   CODE
 
   it 'reports blocked while ask waits and working after the answer' do
-    enabled = run_prompt(ASK_CLI, ['question'], "sure\n")
-    disabled = run_prompt(ASK_CLI, ['question'], "sure\n", 'off')
+    enabled = run_prompt(ask_cli, ['question'], "sure\n")
+    disabled = run_prompt(ask_cli, ['question'], "sure\n", 'off')
     expect(enabled[:stdout]).to eq(disabled[:stdout])
     expect(enabled[:status].exitstatus).to eq(disabled[:status].exitstatus)
     expect(enabled[:stdout]).to include('answered: sure')
@@ -63,7 +63,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
 
   it 'reports yes? and no? prompts once each without leaking answers' do
     [['confirm', 'y'], ['decline', 'n']].each do |command, _answer|
-      enabled = run_prompt(ASK_CLI, [command], "y\n")
+      enabled = run_prompt(ask_cli, [command], "y\n")
       messages = enabled[:frames].map { |frame| frame['msg'] }
       expect(messages).to eq([command, 'Proceed?', command, 'Completed']), command
       expect(enabled[:frames].last['state']).to eq('done')
@@ -71,15 +71,15 @@ RSpec.describe 'Thor OSC7501 prompts' do
   end
 
   it 'never emits hidden input' do
-    enabled = run_prompt(ASK_CLI, ['secret'], "secret-answer\n")
-    disabled = run_prompt(ASK_CLI, ['secret'], "secret-answer\n", 'off')
+    enabled = run_prompt(ask_cli, ['secret'], "secret-answer\n")
+    disabled = run_prompt(ask_cli, ['secret'], "secret-answer\n", 'off')
     expect(enabled[:stdout]).to eq(disabled[:stdout])
     expect(enabled[:status].exitstatus).to eq(disabled[:status].exitstatus)
     expect(enabled[:frames].map { |frame| frame['msg'] }.join).not_to include('secret-answer')
   end
 
   it 'stays blocked through limited-answer retries' do
-    enabled = run_prompt(ASK_CLI, ['limited'], "green\nred\n")
+    enabled = run_prompt(ask_cli, ['limited'], "green\nred\n")
     expect(enabled[:stdout]).to include('choice: red')
     blocked = enabled[:frames].select { |frame| frame['state'] == 'blocked' }
     expect(blocked.size).to eq(1)
@@ -87,8 +87,8 @@ RSpec.describe 'Thor OSC7501 prompts' do
   end
 
   it 'delegates EOF behavior to Thor unchanged' do
-    enabled = run_prompt(ASK_CLI, ['question'], '')
-    disabled = run_prompt(ASK_CLI, ['question'], '', 'off')
+    enabled = run_prompt(ask_cli, ['question'], '')
+    disabled = run_prompt(ask_cli, ['question'], '', 'off')
     expect(enabled[:stdout]).to eq(disabled[:stdout])
     expect(enabled[:status].exitstatus).to eq(disabled[:status].exitstatus)
   end
@@ -96,7 +96,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
   it 'does not double-report when a prompt occurs without a run' do
     source = <<~CODE
       # frozen_string_literal: true
-      #{ACTIVATE}
+      #{activate}
       shell = Thor::Shell::Basic.new
       puts "direct: \#{shell.ask('Standalone?')}"
     CODE
@@ -106,7 +106,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
   end
 
   describe 'on the real CLI shell' do
-    THORFILE = <<~'CODE'.freeze
+    let(:thorfile) { <<~'CODE' }
       require 'thor/osc7501'
       class Interview < Thor
         desc 'question', 'ask a question'
@@ -135,9 +135,9 @@ RSpec.describe 'Thor OSC7501 prompts' do
     CODE
 
     it 'reports prompts on the shell created before Thorfile loading' do
-      enabled = ProcessHelpers.run_cli(source: THORFILE, argv: ['interview:question'], mode: 'force',
+      enabled = ProcessHelpers.run_cli(source: thorfile, argv: ['interview:question'], mode: 'force',
                                         stdin: "go\n", thor_cli: true)
-      disabled = ProcessHelpers.run_cli(source: THORFILE, argv: ['interview:question'], mode: 'off',
+      disabled = ProcessHelpers.run_cli(source: thorfile, argv: ['interview:question'], mode: 'off',
                                         stdin: "go\n", thor_cli: true)
       expect(enabled[:stdout]).to eq(disabled[:stdout])
       expect(enabled[:frames].select { |frame| frame['state'] == 'blocked' }
@@ -147,7 +147,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
 
     it 'reports prompts on Color and explicitly supplied standard shells' do
       %w[interview:color interview:explicit].each do |command|
-        enabled = ProcessHelpers.run_cli(source: THORFILE, argv: [command], mode: 'force',
+        enabled = ProcessHelpers.run_cli(source: thorfile, argv: [command], mode: 'force',
                                           stdin: "go\n", thor_cli: true)
         expect(enabled[:frames].select { |frame| frame['state'] == 'blocked' }
                    .map { |frame| frame['msg'] }).to eq(['Continue?']), command
@@ -156,7 +156,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
     end
 
     it 'preserves the configured shell identity and options' do
-      enabled = ProcessHelpers.run_cli(source: THORFILE, argv: ['interview:identity'], mode: 'force',
+      enabled = ProcessHelpers.run_cli(source: thorfile, argv: ['interview:identity'], mode: 'force',
                                         stdin: "go\n", thor_cli: true)
       expect(enabled[:stdout]).to include('shell: Thor::Shell::Color')
       expect(enabled[:frames].last['state']).to eq('done')
@@ -164,7 +164,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
   end
 
   describe 'PTY attention behavior' do
-    WORK_CLI = <<~'CODE'.freeze
+    let(:work_cli) { <<~'CODE' }
       class Deploy < Thor
         desc 'confirm', 'confirm before finishing'
         def confirm
@@ -183,7 +183,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
     CODE
 
     it 'blocks before input and resumes after it on a TTY' do
-      enabled = ProcessHelpers.run_tty(source: "#{ACTIVATE}\n#{WORK_CLI}", argv: ['confirm'],
+      enabled = ProcessHelpers.run_tty(source: "#{activate}\n#{work_cli}", argv: ['confirm'],
                                         input: "y\n", wait_state: 'blocked')
       expect(enabled[:frames].map { |frame| frame['state'] }).to include('blocked', 'working', 'done')
       expect(enabled[:frames].last['state']).to eq('done')
@@ -191,7 +191,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
     end
 
     it 'reports idle after Ctrl-C at a blocked prompt with no records after the final' do
-      enabled = ProcessHelpers.run_tty(source: "#{ACTIVATE}\n#{WORK_CLI}", argv: ['confirm'],
+      enabled = ProcessHelpers.run_tty(source: "#{activate}\n#{work_cli}", argv: ['confirm'],
                                         wait_state: 'blocked', signal: 'INT')
       expect(enabled[:frames].last['state']).to eq('idle')
       finals = enabled[:frames].rindex { |frame| %w[done error idle].include?(frame['state']) }
@@ -201,7 +201,7 @@ RSpec.describe 'Thor OSC7501 prompts' do
     end
 
     it 'does not overwrite the final error when cleanup follows a failure' do
-      enabled = ProcessHelpers.run_tty(source: "#{ACTIVATE}\n#{WORK_CLI}", argv: ['fail'],
+      enabled = ProcessHelpers.run_tty(source: "#{activate}\n#{work_cli}", argv: ['fail'],
                                         input: "y\n", wait_state: 'blocked')
       expect(enabled[:frames].last['state']).to eq('error')
       finals = enabled[:frames].rindex { |frame| %w[done error idle].include?(frame['state']) }
